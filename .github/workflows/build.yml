@@ -2,30 +2,30 @@ name: build
 
 on:
   release:
-    types: [created]
+    types: [created] # 表示在创建新的 Release 时触发
 
 jobs:
   build-go-binary:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goos: [linux, windows, darwin]
-        goarch: [amd64, arm64]
-        exclude:
+        goos: [linux, windows, darwin] # 需要打包的系统
+        goarch: [amd64, arm64] # 需要打包的架构
+        exclude: # 排除某些平台和架构
           - goarch: arm64
             goos: windows
     steps:
       - uses: actions/checkout@v3
       - uses: wangyoucao577/go-release-action@v1.30
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }} # 一个默认的变量，用来实现往 Release 中添加文件
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          goversion: 1.18
-          binary_name: "hello"
-          extra_files: LICENSE README.md
+          goversion: 1.18 # 可以指定编译使用的 Golang 版本
+          binary_name: "hello" # 可以指定二进制文件的名称
+          extra_files: LICENSE README.md # 需要包含的额外文件
 
-  build-docker-image:
+build-docker-image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -42,11 +42,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }} # 记得在 secrets 中添加响应的 secret
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      - run: go install github.com/mitchellh/gox@latest # setup gox
-      - run: make gox-linux
+      - run: make
       - uses: docker/build-push-action@v3
         with:
           context: .
-          platforms: linux/arm64,linux/amd64,darwin/amd64,darwin/arm64
+          platforms: linux/arm64,linux/amd64 # 需要的平台
           push: true
           tags: ${{ steps.meta.outputs.tags }}
